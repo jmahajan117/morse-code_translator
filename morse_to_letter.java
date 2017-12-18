@@ -13,7 +13,7 @@ public class morse_to_letter {
 		String[] dictionary = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
 				"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
 				"X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
-		File file = new File("Last.txt");
+		File file = new File("morse.txt");
 		String result = "";
 		String s1 = "";
 		int n = 0;
