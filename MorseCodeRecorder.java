@@ -1,52 +1,113 @@
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
+import java.net.SocketTimeoutException;
 
-public class morse_to_letter {
-	private String input;
-	public morse_to_letter(String i)
-	{
-		input = i;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+@SuppressWarnings("serial")
+public class MorseCodeRecorder extends JPanel {
+	private static boolean spacebarCurrentlyDepressed=false;
+	private static Stopwatch sw;
+	
+	public MorseCodeRecorder() {
+		KeyListener listener = new MyKeyListener();
+		addKeyListener(listener);
+		setFocusable(true);
 	}
-	public String convert() throws FileNotFoundException
-	{//input is the string inside
-		String[] dictionary = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
-				"K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
-				"X", "Y", "Z", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
-		File file = new File("Last.txt");
-		String result = "";
-		String s1 = "";
-		int n = 0;
-		for (int i = 0; i < input.length(); i++)
-		{
-			Scanner sc = new Scanner(file);
-			if ((Character.isWhitespace(input.charAt(i)) || input.charAt(i) == '/') || 
-					input.length() <= 5)
-			{
-				if (input.length() <= 5)
-				{
-					s1 = input.substring(0, i) + input.substring(i);
-				}
-				else
-					s1 = input.substring(0, i) + input.substring(i + 1, i + 1);
-				while (sc.hasNextLine())
-				{
-					if (sc.nextLine().equals(s1))
-					{
-						if (input.charAt(i) == '/')
-							result += dictionary[n] + " ";
-						else
-							result += dictionary[n];
-						break;
-					}
-					n++;
-				}
-				n = 0;
-				input = input.substring(i + 1, input.length());
-				i = 0;
+	
+	public static String getMorseCodeInput(long unitLength) {
+		String resultString="";
+		char queuedUpCharacter='\0';
+		sw=new Stopwatch();
+		
+		JFrame frame = new JFrame("Recording Morse Code Input...");
+		MorseCodeRecorder keyboardExample = new MorseCodeRecorder();
+		frame.add(keyboardExample);
+		frame.setSize(200, 200);
+		frame.setVisible(true);
+		//frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		while( ! ( sw.getTime()>5000 && sw.hasBeenStarted()  ) ){
+			if( (queuedUpCharacter == '-' || queuedUpCharacter == '.') && !spacebarCurrentlyDepressed){
+				System.out.println("Added a \""+queuedUpCharacter+"\"");
+				resultString+=queuedUpCharacter;
+				queuedUpCharacter='\0';
 			}
-			sc.close();
+			
+			if( (queuedUpCharacter == ' ' || queuedUpCharacter == '/') && spacebarCurrentlyDepressed){
+				System.out.println("Added a \""+queuedUpCharacter+"\"");
+				resultString+=queuedUpCharacter;
+				queuedUpCharacter='\0';
+			}
+			
+			if(sw.hasBeenStarted() && spacebarCurrentlyDepressed){
+				if(sw.getTime()<unitLength*1.5){
+					if(queuedUpCharacter!='.'){
+						queuedUpCharacter='.';
+						System.out.println("Next character is decided to be a \".\"");
+					}
+				}
+				else{
+					if(queuedUpCharacter!='-'){
+						queuedUpCharacter='-';
+						System.out.println("Next character is decided to be a \"-\"");
+					}
+				}
+			}
+			
+			if(sw.hasBeenStarted() && !spacebarCurrentlyDepressed){
+				if(sw.getTime()>unitLength*3 && sw.getTime()<unitLength*10){
+					if(queuedUpCharacter!=' '){
+						queuedUpCharacter=' ';
+						System.out.println("Next character is decided to be a \" \"");
+					}
+				}
+				else {
+					if(sw.getTime()>unitLength*10){
+						if(queuedUpCharacter!='/'){
+							queuedUpCharacter='/';
+							System.out.println("Next character is decided to be a \"/\"");
+						}
+					}
+				}
+			}             
+			
 		}
-		return result;
+
+		frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+	   
+		return resultString;
+	}
+
+	public class MyKeyListener implements KeyListener {
+		@Override
+		public void keyTyped(KeyEvent e) {
+		}
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			if(e.getKeyCode()==KeyEvent.VK_SPACE && !spacebarCurrentlyDepressed){
+				spacebarCurrentlyDepressed=true;
+				sw.split();
+			}
+			else{
+				if(e.getKeyCode()!=KeyEvent.VK_SPACE)
+					System.out.println("keyPressed="+KeyEvent.getKeyText(e.getKeyCode()));
+			}
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			if(e.getKeyCode()==KeyEvent.VK_SPACE && spacebarCurrentlyDepressed){
+				spacebarCurrentlyDepressed=false;
+				sw.split();
+			}
+			else{
+				if(e.getKeyCode()!=KeyEvent.VK_SPACE)
+					System.out.println("keyReleased="+KeyEvent.getKeyText(e.getKeyCode()));
+			}
+		}
 	}
 }
